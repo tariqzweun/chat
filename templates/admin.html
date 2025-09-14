@@ -1,0 +1,15 @@
+<!DOCTYPE html>
+<html lang="ar">
+<head>
+  <meta charset="UTF-8">
+  <title>لوحة المدير</title>
+</head>
+<body>
+  <h1>المستخدمين المتصلين</h1>
+  <ul>
+    {% for u in users %}
+      <li>{{ u.name }} - {{ u.status }} - آخر رسالة: {{ u.last_message }}</li>
+    {% endfor %}
+  </ul>
+</body>
+</html>
