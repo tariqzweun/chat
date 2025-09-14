@@ -3,25 +3,25 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Chatly Plus — Mig33 Style</title>
+  <title>Chatly Plus — Modern</title>
   <link rel="stylesheet" href="/style.css">
 </head>
 <body>
   <div class="app">
     <aside class="sidebar">
       <div class="brand">Chatly Plus</div>
-      <div class="auth-block">
+      <div class="auth">
         <button id="showLogin">تسجيل دخول</button>
         <button id="showRegister">تسجيل</button>
       </div>
-      <div class="profile" id="profile" style="display:none;">
-        <img id="meAvatar" src="/default-avatar.png" alt="avatar" />
+      <div id="profile" class="profile" style="display:none;">
+        <img id="meAvatar" src="/default-avatar.png" alt="avatar"/>
         <div id="meName">-</div>
-        <div>XP: <span id="meXp">0</span> — Level: <span id="meLevel">0</span></div>
-        <label class="upload-label">تعديل صورتك<input id="avatarInput" type="file" accept="image/*"/></label>
+        <div class="xp">XP: <span id="meXp">0</span> • Level: <span id="meLevel">0</span></div>
+        <label class="upload-label">تغيير الصورة<input id="avatarInput" type="file" accept="image/*" /></label>
         <button id="logoutBtn">خروج</button>
       </div>
-      <div class="rooms">
+      <div class="rooms card">
         <h4>الغرف</h4>
         <ul id="roomsList"></ul>
         <div class="new-room">
@@ -29,7 +29,7 @@
           <button id="createRoomBtn">إنشئ</button>
         </div>
       </div>
-      <div class="friends">
+      <div class="friends card">
         <h4>الأصدقاء</h4>
         <ul id="friendsList"></ul>
         <div class="new-friend">
@@ -41,12 +41,12 @@
     <main class="chat-area">
       <header class="chat-header">
         <div id="currentRoom">General</div>
-        <div id="status">—</div>
+        <div id="status">مرحباً</div>
       </header>
       <section id="messages" class="messages"></section>
       <div class="composer">
         <input id="messageInput" placeholder="اكتب رسالة..." autocomplete="off" />
-        <input id="fileInput" type="file" accept="image/*"/>
+        <input id="fileInput" type="file" accept="image/*" />
         <button id="sendBtn">إرسال</button>
       </div>
     </main>
@@ -57,7 +57,7 @@
     <div class="modal-content">
       <h3>تسجيل دخول</h3>
       <input id="loginUser" placeholder="اسم المستخدم" />
-      <input id="loginPass" type="password" placeholder="كلمة السر"/>
+      <input id="loginPass" type="password" placeholder="كلمة السر" />
       <button id="loginBtn">دخول</button>
     </div>
   </div>
@@ -65,12 +65,12 @@
     <div class="modal-content">
       <h3>تسجيل</h3>
       <input id="regUser" placeholder="اسم المستخدم" />
-      <input id="regPass" type="password" placeholder="كلمة السر"/>
+      <input id="regPass" type="password" placeholder="كلمة السر" />
       <button id="regBtn">سجل</button>
     </div>
   </div>
 
   <script src="/socket.io/socket.io.js"></script>
-  <script src="/app.js"></script>
+  <script src="/script.js"></script>
 </body>
 </html>
