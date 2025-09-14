@@ -1,14 +1,11 @@
 {
-  "name": "chatly-modern-creative",
+  "name": "chatly-react-tailwind",
   "version": "1.0.0",
-  "description": "Chatly Modern Creative - dark, responsive, polished UI with Socket.IO",
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
     "dev": "nodemon server.js"
   },
-  "author": "Your Name",
-  "license": "MIT",
   "dependencies": {
     "bcrypt": "^5.1.1",
     "cors": "^2.8.5",
