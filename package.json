@@ -1,7 +1,7 @@
 {
-  "name": "chatly-star2style",
+  "name": "chatly-modern-dark",
   "version": "1.0.0",
-  "description": "Chatly Star2-style complete app (Express + Socket.IO + JWT + Admin panel)",
+  "description": "Chatly Modern Dark \u2014 full package with auth, dashboard, rooms, admin",
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
