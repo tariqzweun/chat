@@ -1,7 +1,7 @@
 {
-  "name": "chatly-plus-full",
+  "name": "chatly-star2style",
   "version": "1.0.0",
-  "description": "Chatly Plus \u2014 Modern Mig33-style chat (Express + Socket.IO + JWT + MongoDB)",
+  "description": "Chatly Star2-style complete app (Express + Socket.IO + JWT + Admin panel)",
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
