@@ -3,9 +3,9 @@
     {
       "username": "admin",
       "email": "",
-      "passwordHash": "$2b$12$nulkmhKXVuXeJ1IUi4xTVeCNwGzmxivPKyOfvDs0.kWaXThz/eazS",
-      "avatar": "/default-avatar.png",
-      "xp": 2000,
+      "passwordHash": "$2b$12$BSva36v1FC4DQlczjKFg/OUetWPs6BUTYS3d0WSxZsN8Yeix3WyIO",
+      "avatar": "/uploads/default-avatar.png",
+      "xp": 3000,
       "isAdmin": true,
       "banned": false,
       "status": "online"
@@ -34,6 +34,5 @@
     }
   ],
   "messages": [],
-  "bans": [],
   "online": {}
 }
