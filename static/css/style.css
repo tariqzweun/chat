@@ -1,0 +1,21 @@
+body {
+  font-family: Tahoma, sans-serif;
+  direction: rtl;
+  background: #f4f4f9;
+}
+#chat-container {
+  display: flex;
+  gap: 20px;
+}
+#users {
+  width: 200px;
+  background: #fff;
+  padding: 10px;
+}
+#messages {
+  flex: 1;
+  background: #eee;
+  padding: 10px;
+  height: 400px;
+  overflow-y: scroll;
+}
