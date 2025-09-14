@@ -1,14 +1,18 @@
-# Chatly Plus (Mig33-style) - Enhanced
-Features added over basic MVP:
-- Better UI/CSS (modern, responsive)
-- Avatar upload (image files saved to /uploads)
-- XP and Level calculation (level = floor(xp / 10))
-- Message delete (sender can delete own messages)
-- Improved message bubbles with avatar + time
+# Chatly Plus — Full Package
+Modern Mig33-style chat app ready to deploy.
+
+Features:
+- Modern responsive UI (dark theme)
+- Register / Login (JWT)
+- Avatar upload
+- XP starts at 1000 for every new user
+- Welcome message on join
+- Rooms, private messages, delete message
+- MongoDB support or file fallback
 
 Run locally:
 1. npm install
 2. cp .env.example .env
 3. npm start
 
-Deploy: push to GitHub and connect to Railway. Set MONGODB_URI and JWT_SECRET if using DB.
+Deploy: push to GitHub and connect to Railway. Use Custom Start Command: npm start

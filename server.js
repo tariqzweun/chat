@@ -41,7 +41,7 @@ async function connectDB(){
     await mongoose.connect(DB_URI, { dbName: 'chatly' });
     const userSchema = new mongoose.Schema({
       username: String, email: String, passwordHash: String,
-      avatar: String, bio: String, xp: { type: Number, default: 0 },
+      avatar: String, bio: String, xp: { type: Number, default: 1000 },
       friends: [String]
     });
     const messageSchema = new mongoose.Schema({
@@ -84,11 +84,12 @@ app.post('/api/register', async (req,res)=>{
   const existing = UserModel ? await UserModel.findOne({ username }) : Store.users.find(u=>u.username===username);
   if(existing) return res.status(400).json({error:'User exists'});
   const hash = await bcrypt.hash(password, 10);
-  const user = { username, email: email||'', passwordHash: hash, avatar:'', bio:'', xp:0, friends:[] };
+  // initial xp = 1000
+  const user = { username, email: email||'', passwordHash: hash, avatar:'', bio:'', xp:1000, friends:[] };
   if(UserModel){ await UserModel.create(user); }
   else{ Store.users.push(user); fs.writeFileSync(STORE_FILE, JSON.stringify(Store,null,2)); }
   const token = sign(username);
-  res.json({ token, username });
+  res.json({ token, username, xp: user.xp });
 });
 
 app.post('/api/login', async (req,res)=>{
@@ -99,7 +100,7 @@ app.post('/api/login', async (req,res)=>{
   const ok = await bcrypt.compare(password, u.passwordHash);
   if(!ok) return res.status(400).json({error:'Bad creds'});
   const token = sign(username);
-  res.json({ token, username });
+  res.json({ token, username, xp: u.xp||1000 });
 });
 
 // Upload avatar
@@ -121,7 +122,7 @@ app.get('/api/me', authMiddleware, async (req,res)=>{
   const username = req.user.username;
   const u = UserModel ? await UserModel.findOne({ username }).lean() : Store.users.find(x=>x.username===username);
   if(!u) return res.status(404).json({error:'No user'});
-  res.json({ username: u.username, avatar: u.avatar, bio: u.bio, xp: u.xp||0, level: levelFromXp(u.xp||0), friends: u.friends||[] });
+  res.json({ username: u.username, avatar: u.avatar, bio: u.bio, xp: u.xp||1000, level: levelFromXp(u.xp||1000), friends: u.friends||[] });
 });
 
 app.post('/api/add-friend', authMiddleware, async (req,res)=>{
@@ -186,6 +187,8 @@ io.on('connection', (socket)=>{
     if(MessageModel) recent = await MessageModel.find({ room: r }).sort({ timestamp: 1 }).limit(200).lean();
     else recent = Store.messages.filter(m=>m.room===r).slice(-200);
     socket.emit('history', recent);
+    // welcome message to the joining user
+    socket.emit('system', { text: `أهلاً ${socket.data.username||user}! مرحباً بك في ${r} — لديك 1000 نقطة XP كمستخدم جديد.`, timestamp: new Date() });
     io.to(r).emit('system', { text: (socket.data.username||user)+' joined '+r, timestamp: new Date() });
     const clients = await io.in(r).fetchSockets();
     const users = clients.map(s=>({ id: s.id, username: s.data.username||('Anon') }));

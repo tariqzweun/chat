@@ -1,7 +1,7 @@
 {
-  "name": "chatly-mig33-plus",
+  "name": "chatly-plus-full",
   "version": "1.0.0",
-  "description": "Mig33-style social realtime chat (Express + Socket.IO + JWT + MongoDB) - Enhanced UI + avatars + XP",
+  "description": "Chatly Plus \u2014 Modern Mig33-style chat (Express + Socket.IO + JWT + MongoDB)",
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
@@ -10,11 +10,11 @@
   "author": "Your Name",
   "license": "MIT",
   "dependencies": {
-    "bcrypt": "^5.1.0",
+    "bcrypt": "^5.1.1",
     "cors": "^2.8.5",
     "dotenv": "^16.3.1",
     "express": "^4.18.2",
-    "jsonwebtoken": "^9.0.1",
+    "jsonwebtoken": "^9.0.2",
     "mongoose": "^7.5.0",
     "socket.io": "^4.7.1",
     "multer": "^1.4.5-lts.1"
