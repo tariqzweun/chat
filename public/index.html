@@ -3,66 +3,37 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Chatly Star2 — Chat</title>
-  <link rel="stylesheet" href="/style.css">
+  <title>Chatly — تسجيل دخول</title>
+  <link rel="stylesheet" href="/modern.css">
 </head>
-<body>
-  <div class="app">
-    <aside class="sidebar">
-      <div class="brand">Chatly Star2</div>
-      <div class="auth">
-        <button id="showLogin">تسجيل دخول</button>
-        <button id="showRegister">تسجيل</button>
+<body class="dark">
+  <main class="login-page">
+    <div class="card auth-card">
+      <h1>مرحبا بعودتك</h1>
+      <p class="muted">سجل الدخول لبدء الدردشة</p>
+      <input id="loginUser" placeholder="اسم المستخدم" autocomplete="username" />
+      <input id="loginPass" type="password" placeholder="كلمة السر" autocomplete="current-password" />
+      <div class="row">
+        <button id="loginBtn" class="btn primary">دخول</button>
+        <button id="showRegister" class="btn ghost">إنشاء حساب</button>
       </div>
-      <div id="profile" class="profile" style="display:none;">
-        <img id="meAvatar" src="/default-avatar.png" alt="avatar"/>
-        <div id="meName">-</div>
-        <div class="xp">XP: <span id="meXp">0</span> • Level: <span id="meLevel">0</span></div>
-        <label class="upload-label">تغيير الصورة<input id="avatarInput" type="file" accept="image/*" /></label>
-        <button id="logoutBtn">خروج</button>
-        <a href="/admin.html" id="adminLink" style="display:none;">لوحة المدير</a>
-      </div>
-      <div class="rooms card">
-        <h4>الغرف</h4>
-        <ul id="roomsList"></ul>
-        <div class="new-room">
-          <input id="newRoom" placeholder="إنشاء غرفة جديدة" />
-          <button id="createRoomBtn">إنشئ</button>
-        </div>
-      </div>
-    </aside>
-    <main class="chat-area">
-      <header class="chat-header">
-        <div id="currentRoom">General</div>
-        <div id="status">مرحباً</div>
-      </header>
-      <section id="messages" class="messages"></section>
-      <div class="composer">
-        <input id="messageInput" placeholder="اكتب رسالة..." autocomplete="off" />
-        <input id="fileInput" type="file" accept="image/*" />
-        <button id="sendBtn">إرسال</button>
-      </div>
-    </main>
-  </div>
-
-  <div id="loginModal" class="modal" style="display:none;">
-    <div class="modal-content">
-      <h3>تسجيل دخول</h3>
-      <input id="loginUser" placeholder="اسم المستخدم" />
-      <input id="loginPass" type="password" placeholder="كلمة السر" />
-      <button id="loginBtn">دخول</button>
+      <p class="small muted">أو استمر كزائر</p>
+      <button id="guestBtn" class="btn outline">الدخول كزائر</button>
     </div>
-  </div>
+    <div class="card hero">
+      <h2>Chatly — مجتمعك المفضل</h2>
+      <p>غرف حسب الدولة، نقاط XP، و لوحة مدير متكاملة.</p>
+    </div>
+  </main>
   <div id="regModal" class="modal" style="display:none;">
-    <div class="modal-content">
-      <h3>تسجيل</h3>
+    <div class="modal-inner card">
+      <h3>إنشاء حساب جديد</h3>
       <input id="regUser" placeholder="اسم المستخدم" />
       <input id="regPass" type="password" placeholder="كلمة السر" />
-      <button id="regBtn">سجل</button>
+      <button id="regBtn" class="btn primary">سجل</button>
+      <button id="regClose" class="btn ghost">غلق</button>
     </div>
   </div>
-
-  <script src="/socket.io/socket.io.js"></script>
-  <script src="/client.js"></script>
+  <script src="/login.js"></script>
 </body>
 </html>

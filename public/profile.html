@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="ar">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Chatly — ملفي الشخصي</title>
+  <link rel="stylesheet" href="/app.css">
+</head>
+<body class="dark">
+  <div class="app-wrap">
+    <aside class="left">
+      <div class="profile-card card">
+        <img id="meAvatar" src="/default-avatar.png" class="avatar-large" />
+        <h3 id="meName">-</h3>
+        <div class="level">XP: <span id="meXp">0</span> • Level: <span id="meLevel">0</span></div>
+        <textarea id="meStatus" placeholder="اكتب حالتك..."></textarea>
+        <div class="actions">
+          <input id="avatarInput" type="file" accept="image/*" />
+          <button id="logoutBtn" class="btn ghost">خروج</button>
+        </div>
+      </div>
+      <div class="rooms-card card">
+        <div class="card-head"><h4>الغرف</h4><button id="createRoomBtn" class="btn small">إنشاء</button></div>
+        <div id="roomsList" class="rooms-grid"></div>
+      </div>
+    </aside>
+    <main class="main">
+      <header class="main-head">
+        <div id="currentRoom">Home</div>
+        <div id="roomInfo" class="muted">اختَر غرفة للدخول</div>
+      </header>
+      <section id="chatArea" class="chat-area empty">
+        <div id="messages" class="messages"></div>
+      </section>
+      <footer class="composer">
+        <input id="messageInput" placeholder="اكتب رسالة..." />
+        <input id="fileInput" type="file" accept="image/*" />
+        <button id="sendBtn" class="btn primary">إرسال</button>
+      </footer>
+    </main>
+  </div>
+
+  <script src="/socket.io/socket.io.js"></script>
+  <script src="/profile.js"></script>
+</body>
+</html>
