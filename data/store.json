@@ -3,11 +3,9 @@
     {
       "username": "admin",
       "email": "",
-      "passwordHash": "$2b$12$x3I6rYp4n/embuNPBZZs..zp6Vlro05oET95dGX2GSSwQ5kB04J42",
+      "passwordHash": "$2b$12$Opttu4NNnGELhS/.V///JelYe5h34jO4ej79b9ZwFsntpVK9nN6q6",
       "avatar": "/default-avatar.png",
-      "bio": "المدير",
-      "xp": 1200,
-      "friends": [],
+      "xp": 1500,
       "isAdmin": true,
       "banned": false
     }
@@ -18,7 +16,7 @@
     "العراق",
     "السعودية",
     "مصر",
-    "غرفVIP"
+    "VIP"
   ],
   "messages": [],
   "bans": []
