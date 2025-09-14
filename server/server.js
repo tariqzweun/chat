@@ -162,6 +162,20 @@ io.on('connection', socket=>{
     delete Store.online[user]; saveStore(); io.emit('presence', Store.online);
   });
 });
+// ⬅️ حطو هون قبل PORT_LISTEN
+
+const path = require("path");
+
+// تقديم ملفات الواجهة من مجلد client
+app.use(express.static(path.join(__dirname, "../client")));
+
+// أي طلب غير معروف يرجّع index.html (لـ React Router أو SPA)
+app.get("*", (req, res) => {
+  res.sendFile(path.join(__dirname, "../client/index.html"));
+});
+
+const PORT_LISTEN = PORT;
+server.listen(PORT_LISTEN, () => console.log("Server started on", PORT_LISTEN));
 
 const PORT_LISTEN = PORT;
 server.listen(PORT_LISTEN, ()=> console.log('Server started on', PORT_LISTEN));
