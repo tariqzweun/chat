@@ -1,7 +1,7 @@
 {
-  "name": "chatly-mig33",
+  "name": "chatly-mig33-plus",
   "version": "1.0.0",
-  "description": "Mig33-style social realtime chat (Express + Socket.IO + JWT + MongoDB)",
+  "description": "Mig33-style social realtime chat (Express + Socket.IO + JWT + MongoDB) - Enhanced UI + avatars + XP",
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
@@ -16,7 +16,8 @@
     "express": "^4.18.2",
     "jsonwebtoken": "^9.0.1",
     "mongoose": "^7.5.0",
-    "socket.io": "^4.7.1"
+    "socket.io": "^4.7.1",
+    "multer": "^1.4.5"
   },
   "devDependencies": {
     "nodemon": "^3.0.1"

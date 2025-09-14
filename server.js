@@ -8,11 +8,13 @@ const jwt = require('jsonwebtoken');
 const mongoose = require('mongoose');
 const { Server } = require('socket.io');
 const cors = require('cors');
+const multer = require('multer');
 
 const app = express();
 app.use(cors());
-app.use(express.json({ limit: '10mb' }));
-app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+app.use(express.json({ limit: '20mb' }));
+app.use(express.urlencoded({ extended: true, limit: '20mb' }));
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 app.use(express.static(path.join(__dirname, 'public')));
 
 const server = http.createServer(app);
@@ -31,7 +33,7 @@ function ensureData() {
   if (!fs.existsSync(STORE_FILE)) fs.writeFileSync(STORE_FILE, JSON.stringify(Store, null, 2));
 }
 
-let UserModel=null, MessageModel=null, RoomModel=null;
+let UserModel=null, MessageModel=null;
 
 async function connectDB(){
   if(!DB_URI) return false;
@@ -60,12 +62,20 @@ async function connectDB(){
   }
 })();
 
+// Multer for avatar uploads
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => cb(null, 'uploads/'),
+  filename: (req, file, cb) => cb(null, Date.now() + '-' + file.originalname.replace(/\s+/g,'_'))
+});
+const upload = multer({ storage, limits: { fileSize: 5 * 1024 * 1024 } });
+
 // Helpers
 function sign(user){ return jwt.sign({ username: user }, JWT_SECRET, { expiresIn: '7d' }); }
 function authMiddleware(req,res,next){
   const h = req.headers.authorization; if(!h) return res.status(401).json({error:'No token'});
   const token = h.split(' ')[1]; try{ const data = jwt.verify(token, JWT_SECRET); req.user = data; next(); }catch(e){ return res.status(401).json({error:'Invalid token'}); }
 }
+function levelFromXp(xp){ return Math.floor((xp||0)/10); }
 
 // Auth routes
 app.post('/api/register', async (req,res)=>{
@@ -92,18 +102,31 @@ app.post('/api/login', async (req,res)=>{
   res.json({ token, username });
 });
 
+// Upload avatar
+app.post('/api/avatar', authMiddleware, upload.single('avatar'), async (req,res)=>{
+  const username = req.user.username;
+  if(!req.file) return res.status(400).json({ error: 'No file' });
+  const url = '/uploads/' + req.file.filename;
+  if(UserModel){
+    await UserModel.updateOne({ username }, { avatar: url });
+  } else {
+    const u = Store.users.find(x=>x.username===username);
+    if(u){ u.avatar = url; fs.writeFileSync(STORE_FILE, JSON.stringify(Store,null,2)); }
+  }
+  res.json({ ok:true, url });
+});
+
 // Profile and friends
 app.get('/api/me', authMiddleware, async (req,res)=>{
   const username = req.user.username;
   const u = UserModel ? await UserModel.findOne({ username }).lean() : Store.users.find(x=>x.username===username);
   if(!u) return res.status(404).json({error:'No user'});
-  res.json({ username: u.username, avatar: u.avatar, bio: u.bio, xp: u.xp, friends: u.friends||[] });
+  res.json({ username: u.username, avatar: u.avatar, bio: u.bio, xp: u.xp||0, level: levelFromXp(u.xp||0), friends: u.friends||[] });
 });
 
 app.post('/api/add-friend', authMiddleware, async (req,res)=>{
   const { to } = req.body; const from = req.user.username;
   if(!to) return res.status(400).json({error:'No to'});
-  // add friend both ways (simple)
   if(UserModel){
     await UserModel.updateOne({ username: from }, { $addToSet: { friends: to } });
     await UserModel.updateOne({ username: to }, { $addToSet: { friends: from } });
@@ -127,6 +150,22 @@ app.get('/api/messages', async (req,res)=>{
   const msgs = Store.messages.filter(m=>m.room===room).slice(-500); res.json({ messages: msgs });
 });
 
+// Delete message (only sender)
+app.post('/api/delete-message', authMiddleware, async (req,res)=>{
+  const { timestamp, room } = req.body;
+  const username = req.user.username;
+  if(!timestamp || !room) return res.status(400).json({ error: 'Missing' });
+  if(MessageModel){
+    const msg = await MessageModel.findOne({ room, timestamp: new Date(timestamp), from: username });
+    if(msg){ await MessageModel.deleteOne({ _id: msg._id }); return res.json({ ok:true }); }
+    return res.status(403).json({ error: 'Not allowed' });
+  } else {
+    const idx = Store.messages.findIndex(m=>m.room===room && m.timestamp===timestamp && m.from===username);
+    if(idx>-1){ Store.messages.splice(idx,1); fs.writeFileSync(STORE_FILE, JSON.stringify(Store,null,2)); return res.json({ ok:true }); }
+    return res.status(403).json({ error: 'Not allowed' });
+  }
+});
+
 // Socket.io realtime with auth token (simple)
 io.use((socket, next) => {
   const token = socket.handshake.auth?.token;
@@ -147,7 +186,7 @@ io.on('connection', (socket)=>{
     if(MessageModel) recent = await MessageModel.find({ room: r }).sort({ timestamp: 1 }).limit(200).lean();
     else recent = Store.messages.filter(m=>m.room===r).slice(-200);
     socket.emit('history', recent);
-    io.to(r).emit('system', { text: user+' joined '+r, timestamp: new Date() });
+    io.to(r).emit('system', { text: (socket.data.username||user)+' joined '+r, timestamp: new Date() });
     const clients = await io.in(r).fetchSockets();
     const users = clients.map(s=>({ id: s.id, username: s.data.username||('Anon') }));
     io.to(r).emit('users', users);
@@ -155,22 +194,21 @@ io.on('connection', (socket)=>{
 
   socket.on('message', async (msg)=>{
     // msg: { room, type, text, dataUrl, to }
-    const payload = { room: msg.room||'General', from: socket.data.username||'Anonymous', to: msg.to||null, content: { type: msg.type||'text', text: msg.text||'', dataUrl: msg.dataUrl||null }, timestamp: new Date() };
+    const payload = { room: msg.room||'General', from: socket.data.username||user, to: msg.to||null, content: { type: msg.type||'text', text: msg.text||'', dataUrl: msg.dataUrl||null }, timestamp: new Date().toISOString() };
     // persist
     if(MessageModel){ try{ await MessageModel.create(payload); }catch(e){ console.error(e.message); } }
     else { Store.messages.push(payload); fs.writeFileSync(STORE_FILE, JSON.stringify(Store,null,2)); }
     // award xp for activity (simple)
     try{
-      if(UserModel && socket.data.username) await UserModel.updateOne({ username: socket.data.username }, { $inc: { xp: 1 } });
+      if(UserModel && socket.data.username) await UserModel.updateOne({ username: socket.data.username }, { $inc: { xp: 2 } });
       else{
         const u = Store.users.find(x=>x.username===socket.data.username);
-        if(u){ u.xp = (u.xp||0)+1; fs.writeFileSync(STORE_FILE, JSON.stringify(Store,null,2)); }
+        if(u){ u.xp = (u.xp||0)+2; fs.writeFileSync(STORE_FILE, JSON.stringify(Store,null,2)); }
       }
     }catch(e){}
     // emit to room and if private send to target sockets
     io.to(payload.room).emit('message', payload);
     if(payload.to){
-      // send to sockets of that user directly
       const sockets = await io.fetchSockets();
       sockets.filter(s=>s.data.username===payload.to).forEach(s=>s.emit('pm', payload));
     }
