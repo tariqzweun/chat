@@ -1,16 +1,20 @@
-# Chatly Modern Dark
+# Chatly Modern Creative
 
-A modern dark-themed chat application (Express + Socket.IO) with:
-- Login / Register page
-- Personal dashboard (profile + rooms + create room)
-- Chat room UI with modern bubbles and emoji support
-- Admin panel (create rooms, ban/promote users)
+A polished dark modern chat UI designed mobile-first.
 
-Default admin: username `admin` password `admin123`
+Features:
+- Mobile-first responsive design
+- Modern gradients, cards, animations
+- Register/Login with JWT and avatar upload
+- Profile dashboard with rooms and create room UI
+- Realtime chat with Socket.IO
+- Admin panel (create rooms, ban, promote)
+
+Default admin: admin / admin123
 
 Run locally:
 1. npm install
 2. cp .env.example .env
 3. npm start
 
-Deploy: push to GitHub and connect to Railway. Start command: `npm start`
+Deploy: push to GitHub and connect to Railway.

@@ -130,7 +130,7 @@ app.post('/api/admin/create-room', authMiddleware, async (req,res)=>{
   const admin = await isAdminUser(username);
   if(!admin) return res.status(403).json({ error:'Not admin' });
   if(!name) return res.status(400).json({ error:'Missing' });
-  if(!Store.rooms.includes(name)) { Store.rooms.push({ name, featured: !!featured }); fs.writeFileSync(STORE_FILE, JSON.stringify(Store,null,2)); }
+  if(!Store.rooms.map(r=>typeof r==='string'?r:r.name).includes(name)) { Store.rooms.push({ name, featured: !!featured }); fs.writeFileSync(STORE_FILE, JSON.stringify(Store,null,2)); }
   res.json({ ok:true, rooms: Store.rooms });
 });
 
@@ -139,8 +139,8 @@ app.post('/api/admin/ban', authMiddleware, async (req,res)=>{
   const { target } = req.body;
   const admin = await isAdminUser(username);
   if(!admin) return res.status(403).json({ error:'Not admin' });
-  if(UserModel){ await UserModel.updateOne({ username: target }, { banned: true }); }
-  const u = Store.users.find(x=>x.username===target); if(u){ u.banned = true; fs.writeFileSync(STORE_FILE, JSON.stringify(Store,null,2)); }
+  const u = Store.users.find(x=>x.username===target);
+  if(u){ u.banned = true; fs.writeFileSync(STORE_FILE, JSON.stringify(Store,null,2)); }
   const sockets = await io.fetchSockets();
   sockets.filter(s => s.data.username === target).forEach(s => s.disconnect(true));
   res.json({ ok:true });
@@ -151,7 +151,8 @@ app.post('/api/admin/promote', authMiddleware, async (req,res)=>{
   const { target } = req.body;
   const admin = await isAdminUser(username);
   if(!admin) return res.status(403).json({ error:'Not admin' });
-  const u = Store.users.find(x=>x.username===target); if(u){ u.isAdmin = true; fs.writeFileSync(STORE_FILE, JSON.stringify(Store,null,2)); }
+  const u = Store.users.find(x=>x.username===target);
+  if(u){ u.isAdmin = true; fs.writeFileSync(STORE_FILE, JSON.stringify(Store,null,2)); }
   res.json({ ok:true });
 });
 

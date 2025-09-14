@@ -1,7 +1,7 @@
 {
-  "name": "chatly-modern-dark",
+  "name": "chatly-modern-creative",
   "version": "1.0.0",
-  "description": "Chatly Modern Dark \u2014 full package with auth, dashboard, rooms, admin",
+  "description": "Chatly Modern Creative - dark, responsive, polished UI with Socket.IO",
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
