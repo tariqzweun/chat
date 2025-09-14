@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="ar">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Admin Panel — Chatly Star2</title>
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+  <div class="admin-app">
+    <aside class="admin-side">
+      <h3>لوحة المدير</h3>
+      <div>مرحباً <span id="adminName"></span></div>
+      <div class="admin-actions">
+        <input id="roomName" placeholder="اسم الغرفة" />
+        <button id="createRoom">انشاء غرفة</button>
+      </div>
+      <div class="admin-actions">
+        <input id="banUser" placeholder="اسم المستخدم للحظر" />
+        <button id="banBtn">حظر</button>
+      </div>
+      <div class="admin-actions">
+        <input id="promoteUser" placeholder="اسم المستخدم للترقية" />
+        <button id="promoteBtn">ترقية</button>
+      </div>
+      <div>
+        <h4>قائمة المستخدمين</h4>
+        <ul id="usersList"></ul>
+      </div>
+    </aside>
+    <main class="admin-main">
+      <h2>إدارة كاملة</h2>
+      <div id="log"></div>
+    </main>
+  </div>
+
+  <script src="/admin.js"></script>
+</body>
+</html>
