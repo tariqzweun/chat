@@ -1,0 +1,36 @@
+
+{% extends "base.html" %}
+{% block content %}
+<h2 class="text-2xl mb-3">لوحة الإدارة</h2>
+<div class="grid md:grid-cols-2 gap-4">
+  <div class="p-4 bg-white/10 rounded">
+    <h3 class="mb-2">إنشاء غرفة جديدة</h3>
+    <form method="post" class="space-y-2">
+      <input name="name" placeholder="اسم الغرفة" class="w-full p-2 rounded bg-white/5" required>
+      <input name="slug" placeholder="slug (بدون فراغ)" class="w-full p-2 rounded bg-white/5" required>
+      <button class="py-2 px-4 bg-gradient-to-r from-sky-400 to-purple-500 rounded">إنشاء</button>
+    </form>
+  </div>
+  <div class="p-4 bg-white/10 rounded">
+    <h3 class="mb-2">المستخدمون</h3>
+    <table class="w-full text-right">
+      <thead><tr><th>الاسم</th><th>الدور</th></tr></thead>
+      <tbody>
+        {% for u in users %}
+        <tr><td>{{ u.username }}</td><td>{{ u.role }}</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+<form method="post" action="{{ url_for('make_mod') }}" class="mt-4 bg-white/10 p-4 rounded">
+  <h4 class="mb-2">تعيين مشرف لغرفة</h4>
+  <select name="user_id" class="p-2 rounded bg-white/5">
+    {% for u in users %}<option value="{{ u.id }}">{{ u.username }}</option>{% endfor %}
+  </select>
+  <select name="room_slug" class="p-2 rounded bg-white/5">
+    {% for r in rooms %}<option value="{{ r.slug }}">{{ r.name }}</option>{% endfor %}
+  </select>
+  <button class="ml-2 py-2 px-4 bg-gradient-to-r from-sky-400 to-purple-500 rounded">تعيين</button>
+</form>
+{% endblock %}
