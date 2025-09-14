@@ -3,9 +3,9 @@
     {
       "username": "admin",
       "email": "",
-      "passwordHash": "$2b$12$66CAc/u7hqunrdO10Q9sP.kP8vEfRNRnskNW133EgM05H3VSs0kfK",
+      "passwordHash": "$2b$12$rsDISWLUERTJh4aF64g3T.AuHuSyoJkLWV9ItOGH1Qm94pPjiyIsG",
       "avatar": "/default-avatar.png",
-      "bio": "مدير",
+      "bio": "المدير",
       "xp": 1000,
       "friends": [],
       "isAdmin": true,
@@ -13,11 +13,11 @@
     }
   ],
   "rooms": [
+    "Home",
     "General",
     "العراق",
     "السعودية",
     "مصر",
-    "سوريا",
     "الغرف المميزة"
   ],
   "messages": [],
