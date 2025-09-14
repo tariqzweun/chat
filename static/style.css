@@ -1,0 +1,6 @@
+
+/* small custom styles on top of Tailwind */
+.messages{height:360px;overflow:auto;border-radius:8px;padding:8px;background:rgba(255,255,255,0.95);color:#0b254d}
+.msg{padding:8px;border-radius:6px;margin-bottom:6px;background:#e8f0ff}
+.sys{padding:6px;margin:6px 0;color:#555;font-style:italic;text-align:center}
+.kick_btn{background:transparent;border:none;color:#ff9b9b;cursor:pointer}
