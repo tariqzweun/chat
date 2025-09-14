@@ -1,7 +1,8 @@
 {
   "users": [],
-  "messages": [],
+  "friends": [],
   "rooms": [
     "General"
-  ]
+  ],
+  "messages": []
 }
