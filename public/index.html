@@ -1,12 +1,52 @@
-<!DOCTYPE html>
-<html lang="en">
+<!doctype html>
+<html lang="ar">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Railway Node.js App</title>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Chatly — متقدم</title>
+  <link rel="stylesheet" href="/style.css">
 </head>
 <body>
-  <h1>🚀 Welcome! Your Railway app is running 🎉</h1>
-  <p>Try the <a href="/api">/api</a> endpoint.</p>
+  <div class="app">
+    <aside class="sidebar">
+      <div class="brand">Chatly</div>
+      <div class="rooms">
+        <h4>الغرف</h4>
+        <ul id="roomsList"></ul>
+        <div class="new-room">
+          <input id="newRoom" placeholder="إنشاء غرفة جديدة" />
+          <button id="createRoomBtn">إنشئ</button>
+        </div>
+      </div>
+      <div class="users">
+        <h4>المتواجدين</h4>
+        <ul id="usersList"></ul>
+      </div>
+    </aside>
+    <main class="chat-area">
+      <header class="chat-header">
+        <div id="currentRoom">General</div>
+        <div id="me">—</div>
+      </header>
+      <section id="messages" class="messages"></section>
+      <div class="composer">
+        <input id="messageInput" placeholder="اكتب رسالة..." autocomplete="off" />
+        <input id="fileInput" type="file" accept="image/*" />
+        <button id="sendBtn">إرسال</button>
+      </div>
+    </main>
+  </div>
+
+  <div id="loginModal" class="modal">
+    <div class="modal-content">
+      <h3>مرحباً — ادخل اسمك</h3>
+      <input id="usernameInput" placeholder="اسم المستخدم" />
+      <select id="roomSelect"></select>
+      <button id="enterBtn">ادخل الشات</button>
+    </div>
+  </div>
+
+  <script src="/socket.io/socket.io.js"></script>
+  <script src="/script.js"></script>
 </body>
 </html>
