@@ -1,181 +1,218 @@
-require('dotenv').config();
-const express = require('express');
-const http = require('http');
-const path = require('path');
-const fs = require('fs');
-const bcrypt = require('bcrypt');
-const jwt = require('jsonwebtoken');
-const { Server } = require('socket.io');
-const cors = require('cors');
-const multer = require('multer');
+// ---------------------
+// Imports & setup
+// ---------------------
+const express = require("express");
+const http = require("http");
+const socketio = require("socket.io");
+const jwt = require("jsonwebtoken");
+const multer = require("multer");
+const cors = require("cors");
+const path = require("path"); // ⬅️ مهم فقط مرة واحدة
 
 const app = express();
-app.use(cors());
-app.use(express.json({ limit: '30mb' }));
-app.use(express.urlencoded({ extended: true, limit: '30mb' }));
-app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
-app.use(express.static(path.join(__dirname, '..', 'client')));
-
 const server = http.createServer(app);
-const io = new Server(server, { cors: { origin: '*' }, maxHttpBufferSize: 1e7 });
+const io = socketio(server);
 
+app.use(cors());
+app.use(express.json());
+const upload = multer({ dest: "uploads/" });
+
+// ---------------------
+// تخزين مؤقت (بدل قاعدة بيانات)
+// ---------------------
+const Store = {
+  users: [],
+  rooms: [{ name: "General", featured: true }],
+  messages: [],
+  online: {},
+};
+
+// سر التشفير
+const JWT_SECRET = "supersecret";
 const PORT = process.env.PORT || 3000;
-const JWT_SECRET = process.env.JWT_SECRET || 'secretkey';
-const ADMIN_USERS = (process.env.ADMIN_USERS||'').split(',').map(s=>s.trim()).filter(Boolean);
 
-const DATA_DIR = path.join(__dirname,'data');
-const STORE_FILE = path.join(DATA_DIR,'store.json');
-let Store = { users:[], rooms:[{name:'Home',featured:true},{name:'General'},{name:'VIP',featured:true}], messages:[], bans:[], online:{} };
-
-if(!fs.existsSync(DATA_DIR)) fs.mkdirSync(DATA_DIR);
-if(!fs.existsSync(STORE_FILE)){
-  fs.writeFileSync(STORE_FILE, JSON.stringify(Store,null,2));
-} else {
-  try{ Store = JSON.parse(fs.readFileSync(STORE_FILE,'utf8')); }catch(e){ console.error('store read fail',e.message); }
+// ---------------------
+// Middlewares
+// ---------------------
+function sign(username) {
+  return jwt.sign({ username }, JWT_SECRET, { expiresIn: "7d" });
 }
 
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => cb(null, path.join(__dirname,'uploads')),
-  filename: (req,file,cb) => cb(null, Date.now()+'-'+file.originalname.replace(/\s+/g,'_'))
-});
-const upload = multer({ storage, limits: { fileSize: 8 * 1024 * 1024 } });
-
-function saveStore(){ fs.writeFileSync(STORE_FILE, JSON.stringify(Store,null,2)); }
-function sign(username){ return jwt.sign({ username }, JWT_SECRET, { expiresIn: '7d' }); }
-
-function authMiddleware(req,res,next){
-  const h = req.headers.authorization;
-  if(!h) return res.status(401).json({ error:'No token' });
-  const token = h.split(' ')[1];
-  try{ const data = jwt.verify(token, JWT_SECRET); req.user = data; next(); }catch(e){ return res.status(401).json({ error:'Invalid token' }); }
+function authMiddleware(req, res, next) {
+  const token = req.headers.authorization?.split(" ")[1];
+  if (!token) return res.status(401).json({ error: "No token" });
+  try {
+    req.user = jwt.verify(token, JWT_SECRET);
+    next();
+  } catch (e) {
+    return res.status(401).json({ error: "Invalid token" });
+  }
 }
 
-function isAdminName(n){ return ADMIN_USERS.includes(n) || (Store.users.find(u=>u.username===n) && Store.users.find(u=>u.username===n).isAdmin); }
+function isAdmin(username) {
+  return username === "admin"; // ⚡️ خلي اسم المدير "admin"
+}
 
-// helper sanitize
-function sanitizeText(s){ if(!s) return ''; return String(s).replace(/[<>]/g,''); }
+// ---------------------
+// Routes
+// ---------------------
 
-app.post('/api/register', async (req,res)=>{
-  const { username, password } = req.body;
-  if(!username||!password) return res.status(400).json({ error:'Missing' });
-  if(Store.users.find(u=>u.username===username)) return res.status(400).json({ error:'Exists' });
-  const hash = await bcrypt.hash(password,10);
-  const isAdmin = ADMIN_USERS.includes(username);
-  const u = { username, passwordHash:hash, avatar:'/default-avatar.png', xp:1000, isAdmin, banned:false, status:'online' };
-  Store.users.push(u); saveStore();
-  const token = sign(username);
-  res.json({ token, username, isAdmin });
+// تسجيل
+app.post("/api/register", (req, res) => {
+  const { username } = req.body;
+  if (!username) return res.status(400).json({ error: "Missing username" });
+
+  if (Store.users.find((u) => u.username === username)) {
+    return res.status(400).json({ error: "Username already exists" });
+  }
+
+  const user = {
+    username,
+    xp: 0,
+    avatar: "/default-avatar.png",
+    banned: false,
+  };
+
+  Store.users.push(user);
+  res.json({ token: sign(username), username });
 });
 
-app.post('/api/login', async (req,res)=>{
-  const { username, password } = req.body;
-  if(!username||!password) return res.status(400).json({ error:'Missing' });
-  const u = Store.users.find(x=>x.username===username);
-  if(!u) return res.status(400).json({ error:'Not found' });
-  if(u.banned) return res.status(403).json({ error:'Banned' });
-  const ok = await bcrypt.compare(password, u.passwordHash);
-  if(!ok) return res.status(400).json({ error:'Bad creds' });
-  const token = sign(username);
-  res.json({ token, username, isAdmin: !!u.isAdmin });
+// بياناتي
+app.get("/api/me", authMiddleware, (req, res) => {
+  const u = Store.users.find((x) => x.username === req.user.username);
+  if (!u) return res.status(404).json({ error: "No user" });
+  res.json({
+    username: u.username,
+    avatar: u.avatar,
+    xp: u.xp,
+    isAdmin: isAdmin(u.username),
+    status: Store.online[u.username] ? "online" : "offline",
+  });
 });
 
-app.get('/api/me', authMiddleware, (req,res)=>{
-  const u = Store.users.find(x=>x.username===req.user.username);
-  if(!u) return res.status(404).json({ error:'No user' });
-  res.json({ username: u.username, avatar: u.avatar, xp: u.xp, isAdmin: !!u.isAdmin, status: u.status||'online' });
-});
+// رفع صورة شخصية
+app.post(
+  "/api/avatar",
+  authMiddleware,
+  upload.single("avatar"),
+  (req, res) => {
+    if (!req.file) return res.status(400).json({ error: "No file" });
+    const url = "/uploads/" + req.file.filename;
+    const u = Store.users.find((x) => x.username === req.user.username);
+    if (u) {
+      u.avatar = url;
+    }
+    res.json({ avatar: url });
+  }
+);
 
-app.post('/api/avatar', authMiddleware, upload.single('avatar'), (req,res)=>{
-  if(!req.file) return res.status(400).json({ error:'No file' });
-  const url = '/uploads/'+req.file.filename;
-  const u = Store.users.find(x=>x.username===req.user.username); if(u){ u.avatar = url; saveStore(); }
-  res.json({ ok:true, url });
-});
-
-app.get('/api/rooms', (req,res)=>{
+// قائمة الغرف
+app.get("/api/rooms", (req, res) => {
   res.json({ rooms: Store.rooms });
 });
 
-app.post('/api/admin/create-room', authMiddleware, (req,res)=>{
+// إنشاء غرفة (مدير فقط)
+app.post("/api/admin/create-room", authMiddleware, (req, res) => {
+  if (!isAdmin(req.user.username))
+    return res.status(403).json({ error: "Not admin" });
+
   const { name } = req.body;
-  if(!isAdminName(req.user.username)) return res.status(403).json({ error:'Not admin' });
-  if(!name) return res.status(400).json({ error:'Missing' });
-  if(!Store.rooms.find(r=>r.name===name)) { Store.rooms.push({ name, featured:false }); saveStore(); }
-  res.json({ ok:true, rooms: Store.rooms });
+  if (!name) return res.status(400).json({ error: "Missing name" });
+
+  Store.rooms.push({ name, featured: false });
+  res.json({ ok: true, rooms: Store.rooms });
 });
 
-app.post('/api/admin/delete-room', authMiddleware, (req,res)=>{
+// مسح غرفة
+app.post("/api/admin/delete-room", authMiddleware, (req, res) => {
+  if (!isAdmin(req.user.username))
+    return res.status(403).json({ error: "Not admin" });
+
   const { name } = req.body;
-  if(!isAdminName(req.user.username)) return res.status(403).json({ error:'Not admin' });
-  Store.rooms = Store.rooms.filter(r=>r.name!==name); saveStore(); res.json({ ok:true, rooms: Store.rooms });
+  Store.rooms = Store.rooms.filter((r) => r.name !== name);
+  res.json({ ok: true, rooms: Store.rooms });
 });
 
-app.post('/api/admin/ban', authMiddleware, (req,res)=>{
+// باند
+app.post("/api/admin/ban", authMiddleware, (req, res) => {
+  if (!isAdmin(req.user.username))
+    return res.status(403).json({ error: "Not admin" });
+
   const { target } = req.body;
-  if(!isAdminName(req.user.username)) return res.status(403).json({ error:'Not admin' });
-  const u = Store.users.find(x=>x.username===target); if(u){ u.banned = true; saveStore(); }
-  const sockets = Array.from(io.sockets.sockets.values());
-  sockets.forEach(s=>{ if(s.data.username===target) s.disconnect(true); });
-  res.json({ ok:true });
+  const u = Store.users.find((x) => x.username === target);
+  if (u) {
+    u.banned = true;
+    res.json({ ok: true });
+  } else {
+    res.status(404).json({ error: "User not found" });
+  }
 });
 
-app.get('/api/messages', (req,res)=>{
-  const room = req.query.room || 'General';
-  const msgs = Store.messages.filter(m=>m.room===room).slice(-500);
+// استرجاع رسائل
+app.get("/api/messages", (req, res) => {
+  const room = req.query.room || "General";
+  const msgs = Store.messages.filter((m) => m.room === room).slice(-100);
   res.json({ messages: msgs });
 });
 
-// serve client SPA handled by static middleware
-
-io.use((socket,next)=>{
+// ---------------------
+// Socket.IO Events
+// ---------------------
+io.on("connection", (socket) => {
   const token = socket.handshake.auth?.token;
-  if(token){ try{ const data = jwt.verify(token, JWT_SECRET); socket.data.username = data.username; }catch(e){} }
-  next();
+  let username = "Guest" + socket.id.slice(0, 4);
+
+  if (token) {
+    try {
+      const data = jwt.verify(token, JWT_SECRET);
+      username = data.username;
+    } catch {}
+  }
+
+  if (!Store.users.find((u) => u.username === username)) {
+    Store.users.push({ username, xp: 0, avatar: "/default-avatar.png" });
+  }
+
+  Store.online[username] = { at: new Date().toISOString() };
+  io.emit("presence", Store.online);
+
+  socket.on("join", ({ room }) => {
+    socket.join(room);
+    socket.emit("history", Store.messages.filter((m) => m.room === room));
+  });
+
+  socket.on("message", (msg) => {
+    const payload = {
+      room: msg.room || "General",
+      from: username,
+      content: msg.content,
+      type: "text",
+      timestamp: new Date().toISOString(),
+    };
+    Store.messages.push(payload);
+    io.to(payload.room).emit("message", payload);
+
+    const u = Store.users.find((x) => x.username === username);
+    if (u) u.xp += 2;
+  });
+
+  socket.on("disconnect", () => {
+    delete Store.online[username];
+    io.emit("presence", Store.online);
+  });
 });
 
-io.on('connection', socket=>{
-  const user = socket.data.username || ('Guest-'+socket.id.slice(0,4));
-  const urec = Store.users.find(x=>x.username===user);
-  if(urec && urec.banned){ socket.disconnect(true); return; }
-  // mark online
-  Store.online[user] = { at: new Date().toISOString(), avatar: (urec?urec.avatar:'/default-avatar.png') };
-  saveStore();
-  io.emit('presence', Store.online);
-
-  socket.on('join', ({ room })=>{
-    const r = room||'General'; socket.join(r);
-    const recent = Store.messages.filter(m=>m.room===r).slice(-200);
-    socket.emit('history', recent);
-    io.to(r).emit('system', { text:`${user} joined ${r}`, timestamp: new Date().toISOString() });
-  });
-
-  socket.on('message', msg=>{
-    const payload = { room: msg.room||'General', from: socket.data.username||user, content: { type: msg.type||'text', text: sanitizeText(msg.text||''), dataUrl: msg.dataUrl||null }, timestamp: new Date().toISOString() };
-    Store.messages.push(payload); if(Store.messages.length>2000) Store.messages.shift();
-    // increment xp
-    const u = Store.users.find(x=>x.username===socket.data.username); if(u){ u.xp = (u.xp||1000)+2; }
-    saveStore();
-    io.to(payload.room).emit('message', payload);
-  });
-
-  socket.on('disconnect', ()=>{
-    delete Store.online[user]; saveStore(); io.emit('presence', Store.online);
-  });
-});
-// ⬅️ حطو هون قبل PORT_LISTEN
-
-const path = require("path");
-
-// تقديم ملفات الواجهة من مجلد client
+// ---------------------
+// Serve Client
+// ---------------------
 app.use(express.static(path.join(__dirname, "../client")));
-
-// أي طلب غير معروف يرجّع index.html (لـ React Router أو SPA)
 app.get("*", (req, res) => {
   res.sendFile(path.join(__dirname, "../client/index.html"));
 });
 
-const PORT_LISTEN = PORT;
-server.listen(PORT_LISTEN, () => console.log("Server started on", PORT_LISTEN));
-
-const PORT_LISTEN = PORT;
-server.listen(PORT_LISTEN, ()=> console.log('Server started on', PORT_LISTEN));
+// ---------------------
+// Start Server
+// ---------------------
+server.listen(PORT, () => {
+  console.log("Server started on", PORT);
+});
