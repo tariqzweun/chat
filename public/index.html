@@ -1,1 +1,22 @@
-<index.html content from textdoc>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Chatly</title>
+  <link rel="stylesheet" href="style.css">
+  <script src="/socket.io/socket.io.js"></script>
+  <script src="script.js" defer></script>
+</head>
+<body>
+  <div class="chat-container">
+    <header>
+      <h1>Chatly 💬</h1>
+    </header>
+    <main id="chat"></main>
+    <footer>
+      <input id="msg" placeholder="اكتب رسالة..." autocomplete="off">
+      <button onclick="sendMsg()">إرسال</button>
+    </footer>
+  </div>
+</body>
+</html>
