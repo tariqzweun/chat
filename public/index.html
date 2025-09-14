@@ -3,50 +3,65 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Chatly — متقدم</title>
+  <title>Chatly — Mig33 Style</title>
   <link rel="stylesheet" href="/style.css">
 </head>
 <body>
   <div class="app">
     <aside class="sidebar">
       <div class="brand">Chatly</div>
+      <div class="auth-block">
+        <button id="showLogin">تسجيل دخول</button>
+        <button id="showRegister">تسجيل</button>
+      </div>
+      <div class="profile" id="profile" style="display:none;">
+        <div id="meName">-</div>
+        <div>XP: <span id="meXp">0</span></div>
+        <button id="logoutBtn">خروج</button>
+      </div>
       <div class="rooms">
         <h4>الغرف</h4>
         <ul id="roomsList"></ul>
-        <div class="new-room">
-          <input id="newRoom" placeholder="إنشاء غرفة جديدة" />
-          <button id="createRoomBtn">إنشئ</button>
-        </div>
+        <input id="newRoom" placeholder="إنشاء غرفة جديدة" /><button id="createRoomBtn">إنشئ</button>
       </div>
-      <div class="users">
-        <h4>المتواجدين</h4>
-        <ul id="usersList"></ul>
+      <div class="friends">
+        <h4>الأصدقاء</h4>
+        <ul id="friendsList"></ul>
+        <input id="friendName" placeholder="أدخل اسم صديق" /><button id="addFriendBtn">أضف</button>
       </div>
     </aside>
     <main class="chat-area">
       <header class="chat-header">
         <div id="currentRoom">General</div>
-        <div id="me">—</div>
+        <div id="status">—</div>
       </header>
       <section id="messages" class="messages"></section>
       <div class="composer">
         <input id="messageInput" placeholder="اكتب رسالة..." autocomplete="off" />
-        <input id="fileInput" type="file" accept="image/*" />
         <button id="sendBtn">إرسال</button>
       </div>
     </main>
   </div>
 
-  <div id="loginModal" class="modal">
+  <!-- Modals -->
+  <div id="loginModal" class="modal" style="display:none;">
     <div class="modal-content">
-      <h3>مرحباً — ادخل اسمك</h3>
-      <input id="usernameInput" placeholder="اسم المستخدم" />
-      <select id="roomSelect"></select>
-      <button id="enterBtn">ادخل الشات</button>
+      <h3>تسجيل دخول</h3>
+      <input id="loginUser" placeholder="اسم المستخدم" />
+      <input id="loginPass" type="password" placeholder="كلمة السر"/>
+      <button id="loginBtn">دخول</button>
+    </div>
+  </div>
+  <div id="regModal" class="modal" style="display:none;">
+    <div class="modal-content">
+      <h3>تسجيل</h3>
+      <input id="regUser" placeholder="اسم المستخدم" />
+      <input id="regPass" type="password" placeholder="كلمة السر"/>
+      <button id="regBtn">سجل</button>
     </div>
   </div>
 
   <script src="/socket.io/socket.io.js"></script>
-  <script src="/script.js"></script>
+  <script src="/app.js"></script>
 </body>
 </html>
