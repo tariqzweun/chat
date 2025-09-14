@@ -2,38 +2,40 @@
 <html lang="ar">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Chatly — تسجيل دخول</title>
-  <link rel="stylesheet" href="/modern.css">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Chatly — تسجيل</title>
+  <link rel="stylesheet" href="/creative.css">
 </head>
 <body class="dark">
-  <main class="login-page">
-    <div class="card auth-card">
-      <h1>مرحبا بعودتك</h1>
-      <p class="muted">سجل الدخول لبدء الدردشة</p>
-      <input id="loginUser" placeholder="اسم المستخدم" autocomplete="username" />
-      <input id="loginPass" type="password" placeholder="كلمة السر" autocomplete="current-password" />
+  <main class="login-wrap">
+    <section class="left-panel card">
+      <div class="brand">Chatly</div>
+      <h1>مرحباً بك في Chatly</h1>
+      <p class="muted">دردشة عصرية وسريعة — سجّل وابدأ الآن</p>
+      <input id="loginUser" placeholder="اسم المستخدم" />
+      <input id="loginPass" type="password" placeholder="كلمة السر" />
       <div class="row">
         <button id="loginBtn" class="btn primary">دخول</button>
-        <button id="showRegister" class="btn ghost">إنشاء حساب</button>
+        <button id="showReg" class="btn ghost">تسجيل</button>
       </div>
-      <p class="small muted">أو استمر كزائر</p>
-      <button id="guestBtn" class="btn outline">الدخول كزائر</button>
-    </div>
-    <div class="card hero">
-      <h2>Chatly — مجتمعك المفضل</h2>
-      <p>غرف حسب الدولة، نقاط XP، و لوحة مدير متكاملة.</p>
-    </div>
+      <button id="guestBtn" class="btn outline">دخول كزائر</button>
+      <p class="small muted">تصميم عصري ومتجاوب للهاتف</p>
+    </section>
+    <section class="right-panel card hero">
+      <h2>تصميم مُبتكر</h2>
+      <p>ألوان متدرجة، حركات ناعمة وتجربة مستخدم مريحة على الهاتف والكمبيوتر.</p>
+    </section>
   </main>
-  <div id="regModal" class="modal" style="display:none;">
-    <div class="modal-inner card">
-      <h3>إنشاء حساب جديد</h3>
+
+  <div id="regModal" class="modal" style="display:none">
+    <div class="modal-card card">
+      <h3>إنشاء حساب</h3>
       <input id="regUser" placeholder="اسم المستخدم" />
       <input id="regPass" type="password" placeholder="كلمة السر" />
-      <button id="regBtn" class="btn primary">سجل</button>
-      <button id="regClose" class="btn ghost">غلق</button>
+      <div class="row"><button id="regBtn" class="btn primary">سجل</button><button id="regClose" class="btn ghost">غلق</button></div>
     </div>
   </div>
-  <script src="/login.js"></script>
+
+  <script src="/login_creative.js"></script>
 </body>
 </html>
