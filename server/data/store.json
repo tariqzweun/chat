@@ -1,1 +1,39 @@
-s
+{
+  "users": [
+    {
+      "username": "admin",
+      "email": "",
+      "passwordHash": "$2b$12$nulkmhKXVuXeJ1IUi4xTVeCNwGzmxivPKyOfvDs0.kWaXThz/eazS",
+      "avatar": "/default-avatar.png",
+      "xp": 2000,
+      "isAdmin": true,
+      "banned": false,
+      "status": "online"
+    }
+  ],
+  "rooms": [
+    {
+      "name": "Home",
+      "featured": true
+    },
+    {
+      "name": "General"
+    },
+    {
+      "name": "VIP",
+      "featured": true
+    },
+    {
+      "name": "العراق"
+    },
+    {
+      "name": "السعودية"
+    },
+    {
+      "name": "مصر"
+    }
+  ],
+  "messages": [],
+  "bans": [],
+  "online": {}
+}
