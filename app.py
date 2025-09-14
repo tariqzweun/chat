@@ -1,23 +1,33 @@
+# app.py
 import os
-from flask import Flask, render_template, redirect, url_for, request, flash, jsonify, abort
+from functools import wraps
+from datetime import datetime
+
+# eventlet monkey patch for socketio/gunicorn compatibility
+import eventlet
+eventlet.monkey_patch()
+
+from flask import Flask, render_template, redirect, url_for, request, flash, abort
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager, UserMixin, login_user, logout_user, current_user, login_required
 from werkzeug.security import generate_password_hash, check_password_hash
 from flask_socketio import SocketIO, join_room, leave_room, emit
-from datetime import datetime
+from flask_migrate import Migrate
 
-app = Flask(__name__)
-app.secret_key = os.getenv("SECRET_KEY", "change_this_secret")
-
+# --- App init ---
+app = Flask(__name__, static_folder="static", template_folder="templates")
+app.secret_key = os.getenv("SECRET_KEY", "change_this_secret_change_it")
 DATABASE_URL = os.getenv("DATABASE_URL")
 if DATABASE_URL and DATABASE_URL.startswith("postgres://"):
     DATABASE_URL = DATABASE_URL.replace("postgres://", "postgresql://", 1)
-
 app.config["SQLALCHEMY_DATABASE_URI"] = DATABASE_URL or "sqlite:///data.db"
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 
 db = SQLAlchemy(app)
-socketio = SocketIO(app, cors_allowed_origins="*")
+migrate = Migrate(app, db)
+
+# Use eventlet async mode explicitly
+socketio = SocketIO(app, cors_allowed_origins="*", async_mode="eventlet")
 
 login_manager = LoginManager()
 login_manager.init_app(app)
@@ -29,7 +39,7 @@ class User(UserMixin, db.Model):
     username = db.Column(db.String(80), unique=True, nullable=False)
     email = db.Column(db.String(200), unique=True, nullable=True)
     password_hash = db.Column(db.String(200), nullable=True)
-    role = db.Column(db.String(20), default="user")
+    role = db.Column(db.String(20), default="user")  # admin / moderator / user / guest
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
     def set_password(self, pw):
@@ -66,11 +76,52 @@ class RoomModerator(db.Model):
     user_id = db.Column(db.Integer, db.ForeignKey("user.id"), nullable=False)
 
 # --- helpers ---
-online_users = {}
+online_users = {}  # user_id -> {"username":..., "status":"online/away", "room": slug or None}
 
 @login_manager.user_loader
 def load_user(user_id):
-    return User.query.get(int(user_id))
+    try:
+        return User.query.get(int(user_id))
+    except Exception:
+        return None
+
+# Create DB tables but DO NOT create default rooms here
+@app.before_first_request
+def create():
+    db.create_all()
+
+# If no admin exists, redirect most pages to setup-admin.
+@app.before_request
+def ensure_admin_exists():
+    # Allow static files, setup admin page, login/register and socketio handshake to work
+    allowed_paths = (
+        "/setup-admin",
+        "/login",
+        "/register",
+        "/static/",
+        "/favicon.ico",
+    )
+    # allow socket.io websocket path
+    if request.path.startswith("/socket.io"):
+        return
+    if any(request.path.startswith(p) for p in allowed_paths):
+        return
+    try:
+        admin_exists = User.query.filter_by(role="admin").first() is not None
+    except Exception:
+        admin_exists = False
+    if not admin_exists:
+        # redirect everything else to setup-admin to create the first admin
+        return redirect(url_for("setup_admin"))
+
+# decorator for admin-only routes
+def admin_required(f):
+    @wraps(f)
+    def wrapped(*args, **kwargs):
+        if not current_user.is_authenticated or current_user.role != "admin":
+            abort(403)
+        return f(*args, **kwargs)
+    return wrapped
 
 # --- Routes ---
 @app.route("/")
@@ -80,25 +131,32 @@ def index():
 
 @app.route("/setup-admin", methods=["GET","POST"])
 def setup_admin():
+    # If admin already exists, go login
     if User.query.filter_by(role="admin").first():
         flash("Admin already exists", "info")
         return redirect(url_for("login"))
     if request.method == "POST":
-        username = request.form.get("username") or "admin"
+        username = (request.form.get("username") or "admin").strip()
         email = request.form.get("email") or None
         password = request.form.get("password") or "adminpass"
+        if not username:
+            flash("Username required", "danger")
+            return redirect(url_for("setup_admin"))
+        if User.query.filter_by(username=username).first():
+            flash("Username taken", "danger")
+            return redirect(url_for("setup_admin"))
         u = User(username=username, email=email, role="admin")
         u.set_password(password)
         db.session.add(u)
         db.session.commit()
-        flash("Admin created", "success")
+        flash("Admin created. Please log in.", "success")
         return redirect(url_for("login"))
     return render_template("setup_admin.html", current_user=current_user)
 
 @app.route("/register", methods=["GET","POST"])
 def register():
     if request.method == "POST":
-        username = request.form.get("username").strip()
+        username = (request.form.get("username") or "").strip()
         if not username:
             flash("Username required","danger")
             return redirect(url_for("register"))
@@ -106,25 +164,21 @@ def register():
             flash("Username taken","danger")
             return redirect(url_for("register"))
         u = User(username=username, role="guest")
-        db.session.add(u)
-        db.session.commit()
+        db.session.add(u); db.session.commit()
         login_user(u)
-        flash("Logged in as guest","success")
-        return redirect(url_for("index"))
+        flash("Logged in as guest","success"); return redirect(url_for("index"))
     return render_template("register.html", current_user=current_user)
 
 @app.route("/login", methods=["GET","POST"])
 def login():
-    if request.method == "POST":
+    if request.method=="POST":
         username = request.form.get("username")
         password = request.form.get("password")
         user = User.query.filter_by(username=username).first()
         if user and user.check_password(password):
             login_user(user)
-            flash("Logged in","success")
-            return redirect(url_for("index"))
-        flash("Bad credentials","danger")
-        return redirect(url_for("login"))
+            flash("Logged in","success"); return redirect(url_for("index"))
+        flash("Bad credentials","danger"); return redirect(url_for("login"))
     return render_template("login.html", current_user=current_user)
 
 @app.route("/logout")
@@ -132,9 +186,7 @@ def login():
 def logout():
     uid = current_user.get_id()
     online_users.pop(uid, None)
-    logout_user()
-    flash("Logged out","info")
-    return redirect(url_for("index"))
+    logout_user(); flash("Logged out","info"); return redirect(url_for("index"))
 
 @app.route("/rooms")
 def rooms():
@@ -142,34 +194,34 @@ def rooms():
     return render_template("rooms.html", rooms=rooms, current_user=current_user, online_count=len(online_users))
 
 @app.route("/admin", methods=["GET","POST"])
-@login_required
+@admin_required
 def admin_panel():
-    if current_user.role != "admin":
-        abort(403)
-    if request.method=="POST":
-        name = request.form.get("name")
-        slug = request.form.get("slug")
-        if name and slug and not Room.query.filter_by(slug=slug).first():
+    if request.method == "POST":
+        name = (request.form.get("name") or "").strip()
+        slug = (request.form.get("slug") or "").strip()
+        if not name or not slug:
+            flash("Name and slug are required", "danger")
+        elif Room.query.filter_by(slug=slug).first():
+            flash("Slug already used", "danger")
+        else:
             db.session.add(Room(name=name, slug=slug, created_by=current_user.id))
             db.session.commit()
             flash("Room created","success")
-        else:
-            flash("Invalid or duplicate slug","danger")
-    rooms = Room.query.all()
-    users = User.query.all()
+    rooms = Room.query.all(); users = User.query.all()
     return render_template("admin.html", rooms=rooms, users=users, current_user=current_user)
 
 @app.route("/make-moderator", methods=["POST"])
 @login_required
 def make_mod():
-    if current_user.role != "admin":
-        abort(403)
-    uid = int(request.form.get("user_id"))
+    if current_user.role != "admin": abort(403)
+    try:
+        uid = int(request.form.get("user_id"))
+    except:
+        uid = None
     slug = request.form.get("room_slug")
     if uid and slug:
         if not RoomModerator.query.filter_by(room_slug=slug, user_id=uid).first():
-            db.session.add(RoomModerator(room_slug=slug, user_id=uid))
-            db.session.commit()
+            db.session.add(RoomModerator(room_slug=slug, user_id=uid)); db.session.commit()
             flash("Moderator assigned","success")
     return redirect(url_for("admin_panel"))
 
@@ -194,15 +246,20 @@ def private_chat(username):
 # --- Socket.IO events ---
 @socketio.on("connect")
 def on_connect():
-    if current_user.is_authenticated:
-        online_users[current_user.get_id()] = {"username": current_user.username, "status":"online", "room": None}
-        emit("presence_update", {"online_count": len(online_users)}, broadcast=True)
+    # Allow anonymous visitors too; if user authenticated, add to online list
+    try:
+        if current_user.is_authenticated:
+            uid = current_user.get_id()
+            online_users[uid] = {"username": current_user.username, "status":"online", "room": None}
+    except Exception:
+        pass
+    emit("presence_update", {"online_count": len(online_users)}, broadcast=True)
 
 @socketio.on("set_status")
 def on_status(data):
     status = data.get("status") or "online"
-    uid = current_user.get_id()
-    if uid in online_users:
+    uid = current_user.get_id() if current_user.is_authenticated else None
+    if uid and uid in online_users:
         online_users[uid]["status"] = status
         emit("presence_update", {"online_count": len(online_users)}, broadcast=True)
 
@@ -210,9 +267,11 @@ def on_status(data):
 def on_join(data):
     room = data.get("room")
     username = current_user.username if current_user.is_authenticated else data.get("username","زائر")
+    if not room:
+        return
     join_room(room)
-    uid = current_user.get_id()
-    if uid in online_users:
+    uid = current_user.get_id() if current_user.is_authenticated else None
+    if uid and uid in online_users:
         online_users[uid]["room"] = room
     emit("system_message", {"msg": f"{username} انضم للغرفة."}, room=room)
     emit("members_update", {"members":[v for k,v in online_users.items() if v.get("room")==room]}, room=room)
@@ -221,58 +280,46 @@ def on_join(data):
 def on_leave(data):
     room = data.get("room")
     username = current_user.username if current_user.is_authenticated else data.get("username","زائر")
+    if not room:
+        return
     leave_room(room)
-    uid = current_user.get_id()
-    if uid in online_users:
+    uid = current_user.get_id() if current_user.is_authenticated else None
+    if uid and uid in online_users:
         online_users[uid]["room"] = None
     emit("system_message", {"msg": f"{username} غادر الغرفة."}, room=room)
     emit("members_update", {"members":[v for k,v in online_users.items() if v.get("room")==room]}, room=room)
 
 @socketio.on("message")
 def on_message(data):
-    room = data.get("room")
-    text = data.get("text")
+    room = data.get("room"); text = data.get("text")
     username = current_user.username if current_user.is_authenticated else "زائر"
     if room and text:
-        m = Message(room=room, user=username, text=text)
-        db.session.add(m)
-        db.session.commit()
+        m = Message(room=room, user=username, text=text); db.session.add(m); db.session.commit()
         emit("message", {"user": username, "text": text, "ts": m.ts.isoformat()}, room=room)
 
 @socketio.on("private_message")
 def on_private(data):
-    to = data.get("to")
-    text = data.get("text")
-    frm = current_user.username
+    to = data.get("to"); text = data.get("text"); frm = current_user.username if current_user.is_authenticated else "زائر"
     if to and text:
-        pm = PrivateMessage(sender=frm, recipient=to, text=text)
-        db.session.add(pm)
-        db.session.commit()
+        pm = PrivateMessage(sender=frm, recipient=to, text=text); db.session.add(pm); db.session.commit()
         emit("private_message", {"from": frm, "to": to, "text": text}, broadcast=True)
 
 @socketio.on("kick")
 def on_kick(data):
-    target = data.get("target")
-    room = data.get("room")
+    target = data.get("target"); room = data.get("room")
     allowed = False
-    if current_user.role == "admin":
+    if current_user.is_authenticated and current_user.role == "admin":
         allowed = True
     else:
-        if RoomModerator.query.filter_by(room_slug=room, user_id=current_user.id).first():
+        if current_user.is_authenticated and RoomModerator.query.filter_by(room_slug=room, user_id=current_user.id).first():
             allowed = True
     if not allowed:
-        emit("system_message", {"msg":"ليس لديك صلاحية للطرد."}, room=current_user.id)
+        emit("system_message", {"msg":"ليس لديك صلاحية للطرد."}, room=current_user.get_id() if current_user.is_authenticated else None)
         return
     emit("kicked", {"target": target, "room": room}, room=room)
 
-# --- Init DB on startup ---
-with app.app_context():
-    db.create_all()
-    if not Room.query.first():
-        r1 = Room(name="الغرفة العامة", slug="general")
-        r2 = Room(name="العالمية", slug="global")
-        db.session.add_all([r1, r2])
-        db.session.commit()
-
+# --- Run (for local dev) ---
 if __name__ == "__main__":
-    socketio.run(app, host="0.0.0.0", port=int(os.getenv("PORT",5000)))
+    # Local dev server (not used on Railway; Railway will use Procfile/gunicorn)
+    db.create_all()
+    socketio.run(app, host="0.0.0.0", port=int(os.getenv("PORT", 5000)))
