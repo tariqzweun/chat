@@ -1,0 +1,9 @@
+{
+  "name": "star2chat-root",
+  "private": true,
+  "workspaces": ["apps/*"],
+  "scripts": {
+    "start": "node apps/api/index.js"
+  },
+  "dependencies": {}
+}
