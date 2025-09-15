@@ -1,10 +1,12 @@
 from flask import Flask, render_template, request, redirect, url_for, session
 from flask_socketio import SocketIO, join_room, leave_room, send
 import secrets
+import eventlet
+import eventlet.wsgi
 
 app = Flask(__name__)
 app.config["SECRET_KEY"] = secrets.token_hex(16)
-socketio = SocketIO(app, cors_allowed_origins="*")
+socketio = SocketIO(app, cors_allowed_origins="*", async_mode="eventlet")
 
 # بيانات مؤقتة (ممكن تطويرها لاحقاً بقاعدة بيانات)
 users = {}
@@ -74,5 +76,6 @@ def handle_message(data):
     msg = f"{data['username']}: {data['msg']}"
     send(msg, to=room)
 
+# تشغيل عبر eventlet في الإنتاج
 if __name__ == "__main__":
-    socketio.run(app, host="0.0.0.0", port=5000)
+    eventlet.wsgi.server(eventlet.listen(("0.0.0.0", 5000)), app)
