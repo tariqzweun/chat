@@ -1,8 +1,0 @@
-{
-  "name": "modern-chat-app",
-  "version": "1.0.0",
-  "scripts": {
-    "start": "node server.js",
-    "postinstall": "cd frontend && npm install && npm run build"
-  }
-}
