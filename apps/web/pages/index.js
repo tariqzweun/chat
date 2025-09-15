@@ -1,1 +1,1 @@
-n
+export default function Home() { return <div>Chat Home</div> }
