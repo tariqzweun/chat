@@ -1,12 +1,11 @@
 from flask import Flask, render_template, request, redirect, url_for, session
 from flask_socketio import SocketIO, join_room, leave_room, send
 import secrets
-import eventlet
-import eventlet.wsgi
 
+# إعداد التطبيق
 app = Flask(__name__)
 app.config["SECRET_KEY"] = secrets.token_hex(16)
-socketio = SocketIO(app, cors_allowed_origins="*", async_mode="eventlet")
+socketio = SocketIO(app, cors_allowed_origins="*")
 
 # بيانات مؤقتة (ممكن تطويرها لاحقاً بقاعدة بيانات)
 users = {}
@@ -14,6 +13,7 @@ rooms = {"العام": []}
 admin_username = "admin"
 admin_password = "1234"
 
+# الصفحة الرئيسية - تسجيل اسم المستخدم واختيار الغرفة
 @app.route("/", methods=["GET", "POST"])
 def index():
     if request.method == "POST":
@@ -27,12 +27,18 @@ def index():
             return redirect(url_for("chat"))
     return render_template("index.html", rooms=rooms.keys())
 
+# صفحة المحادثة
 @app.route("/chat")
 def chat():
     if "username" not in session or "room" not in session:
         return redirect(url_for("index"))
-    return render_template("chat.html", username=session["username"], room=session["room"])
+    return render_template(
+        "chat.html",
+        username=session["username"],
+        room=session["room"]
+    )
 
+# صفحة تسجيل دخول المدير
 @app.route("/admin", methods=["GET", "POST"])
 def admin():
     if request.method == "POST":
@@ -43,6 +49,7 @@ def admin():
             return redirect(url_for("admin_panel"))
     return render_template("admin.html")
 
+# لوحة تحكم المدير
 @app.route("/admin/panel", methods=["GET", "POST"])
 def admin_panel():
     if not session.get("is_admin"):
@@ -56,6 +63,7 @@ def admin_panel():
             del rooms[room_name]
     return render_template("admin_panel.html", rooms=rooms.keys())
 
+# الأحداث عبر SocketIO
 @socketio.on("join")
 def on_join(data):
     username = data["username"]
@@ -76,6 +84,6 @@ def handle_message(data):
     msg = f"{data['username']}: {data['msg']}"
     send(msg, to=room)
 
-# تشغيل عبر eventlet في الإنتاج
+# ملاحظة: ما منحدد host/port هون لأن Railway بيعملها أوتوماتيكياً
 if __name__ == "__main__":
-    eventlet.wsgi.server(eventlet.listen(("0.0.0.0", 5000)), app)
+    socketio.run(app, debug=True)
