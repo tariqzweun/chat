@@ -74,5 +74,4 @@ def handle_message(data):
     msg = f"{data['username']}: {data['msg']}"
     send(msg, to=room)
 
-if __name__ == "__main__":
-    socketio.run(app, host="0.0.0.0", port=5000, allow_unsafe_werkzeug=True)
+# مافي if __name__ == "__main__" لأننا رح نشغل باستخدام gunicorn
