@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="ar">
+<head>
+  <meta charset="UTF-8">
+  <title>لوحة التحكم</title>
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+  <div class="card">
+    <h2>📋 إدارة الغرف</h2>
+    <form method="POST">
+      <input type="text" name="room" placeholder="اسم الغرفة">
+      <button name="action" value="add">➕ إضافة</button>
+      <button name="action" value="delete">🗑️ حذف</button>
+    </form>
+    <h3>الغرف الحالية:</h3>
+    <ul>
+      {% for room in rooms %}
+        <li>{{room}}</li>
+      {% endfor %}
+    </ul>
+  </div>
+</body>
+</html>
