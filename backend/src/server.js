@@ -1,38 +1,40 @@
 const express = require("express");
-const cors = require("cors");
 const http = require("http");
-const { Server } = require("socket.io");
+const socketIo = require("socket.io");
+const path = require("path");
 
 const app = express();
-app.use(cors());
-app.use(express.json());
-
-// أنشئ سيرفر HTTP
 const server = http.createServer(app);
+const io = socketIo(server);
 
-// اربط Socket.io
-const io = new Server(server, {
-  cors: {
-    origin: "*", // غيّرها لاحقاً لرابط الفرونت إند تبعك
-    methods: ["GET", "POST"]
-  }
-});
-
-// Event بسيط للتجربة
+// ==================
+// Socket.io events
+// ==================
 io.on("connection", (socket) => {
-  console.log("✅ User connected:", socket.id);
+  console.log("🟢 New user connected");
+
+  socket.on("chatMessage", (msg) => {
+    io.emit("chatMessage", msg); // يرسل الرسالة للجميع
+  });
+
   socket.on("disconnect", () => {
-    console.log("❌ User disconnected:", socket.id);
+    console.log("🔴 User disconnected");
   });
 });
 
-// جملة ترحيب أساسية
-app.get("/", (req, res) => {
-  res.send("🚀 Chat backend is running!");
+// ==================
+// Serve frontend build
+// ==================
+app.use(express.static(path.join(__dirname, "../../frontend/build")));
+
+app.get("*", (req, res) => {
+  res.sendFile(path.join(__dirname, "../../frontend/build", "index.html"));
 });
 
-// أهم شي: استخدم PORT من Railway
-const PORT = process.env.PORT || 4000;
+// ==================
+// Start server
+// ==================
+const PORT = process.env.PORT || 5000;
 server.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
+  console.log(`🚀 Chat app running on port ${PORT}`);
 });
