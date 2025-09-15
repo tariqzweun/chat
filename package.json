@@ -1,9 +1,11 @@
 {
-  "name": "star2chat-root",
-  "private": true,
-  "workspaces": ["apps/*"],
+  "name": "chat-app",
+  "version": "1.0.0",
+  "main": "apps/api/index.js",
   "scripts": {
     "start": "node apps/api/index.js"
   },
-  "dependencies": {}
+  "dependencies": {
+    "express": "^4.18.2"
+  }
 }
