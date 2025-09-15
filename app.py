@@ -75,6 +75,4 @@ def handle_message(data):
     send(msg, to=room)
 
 if __name__ == "__main__":
-    from gevent import monkey
-    monkey.patch_all()
-    socketio.run(app, host="0.0.0.0", port=5000)
+    socketio.run(app, host="0.0.0.0", port=5000, allow_unsafe_werkzeug=True)
