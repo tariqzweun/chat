@@ -1,1 +1,1 @@
-a
+console.log('create admin');
